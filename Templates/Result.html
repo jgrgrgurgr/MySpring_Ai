@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>분석 결과</title>
+    <title>예측 결과</title>
 </head>
 <body>
-    <h1>분석 결과</h1>
-    <p>파일 이름: {{ result.filename }}</p>
-    <p>분류 결과: {{ result.class }}</p>
-    <p>신뢰도: {{ result.confidence }}</p>
-    <p>변화 정도(심각성 점수): {{ result.severity_score }}</p>
-    <img src="{{ url_for('uploaded_file', filename=result.filename) }}" alt="업로드한 이미지"><br>
+    <h1>예측 결과</h1>
+    <p>파일명: {{ result['filename'] }}</p>
+    <p>클래스: {{ result['class'] }}</p>
+    <p>신뢰도: {{ result['confidence'] }}</p>
+    <p>심각성 점수: {{ result['severity_score'] }}</p>
+    <img src="{{ url_for('static', filename='uploads/' + result['filename']) }}" alt="업로드한 이미지"><br>
     <a href="/">다른 이미지 예측하기</a>
 </body>
 </html>

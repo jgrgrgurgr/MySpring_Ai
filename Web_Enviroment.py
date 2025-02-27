@@ -1,22 +1,22 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory, url_for
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from werkzeug.utils import secure_filename
 import os
+import requests
 from Face_Whether_Stroke import StrokePredictor
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = os.path.join('static', 'uploads')
+UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads')
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'bmp', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.',1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-BASE_IMAGE_PATH = os.path.join(app.root_path, "Annotated stroke and non stroke Dataset/Stroke/img_0023.jpg")  # 기준이 되는 이미지 파일명
+BASE_IMAGE_PATH = os.path.join(app.root_path, "Annotated stroke and non stroke Dataset/Stroke/img_0023.jpg") # 기준이 되는 이미지 파일 경로
 
 predictor = StrokePredictor(BASE_IMAGE_PATH)
 
-# 업로드 폴더 생성
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
@@ -41,24 +41,45 @@ def predict():
             filename = secure_filename(file.filename)
             image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(image_path)
+            result = predictor.predict_image(image_path)
+            result['filename'] = filename
 
             try:
-                # 이미지 예측
                 result = predictor.predict_image(image_path)
-
-                # 신뢰도와 변화 정도를 백분율로 변환하고 소수점 한 자리까지로 포맷팅
+                
+                # 예측 결과를 Spring 백엔드로 전송
+                send_data_to_spring_backend(result)
+                
                 result['confidence'] = f"{result['confidence'] * 100:.1f}%"
                 result['severity_score'] = f"{result['severity_score'] * 100:.1f}%"
-
-                # 결과를 템플릿에 전달
+                
                 return render_template('Result.html', result=result)
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
             finally:
-                # 이미지를 삭제하지 않습니다.
-                pass
+                if os.path.exists(image_path):
+                    os.remove(image_path)
         else:
             return jsonify({"error": "허용되지 않는 파일 형식입니다."}), 400
+
+
+def send_data_to_spring_backend(result):
+    url = "http://localhost:8080/receive-data"  # Spring 백엔드의 엔드포인트 URL
+    headers = {'Content-Type': 'application/json'}
+    
+    data = {
+        "filename": result.get("filename"),
+        "className": result.get("class"),
+        "confidence": result.get("confidence"),
+        "severityScore": result.get("severity_score")
+    }
+    
+    try:
+        response = requests.post(url, json=data, headers=headers)
+        response.raise_for_status()
+        print("데이터 전송 성공:", response.text)
+    except requests.exceptions.RequestException as e:
+        print("데이터 전송 실패:", e)
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
