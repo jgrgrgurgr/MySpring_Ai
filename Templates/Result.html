@@ -1,15 +1,22 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
+    <meta charset="UTF-8">
     <title>예측 결과</title>
 </head>
 <body>
     <h1>예측 결과</h1>
-    <p>파일명: {{ result['filename'] }}</p>
-    <p>클래스: {{ result['class'] }}</p>
-    <p>신뢰도: {{ result['confidence'] }}</p>
-    <p>심각성 점수: {{ result['severity_score'] }}</p>
-    <img src="{{ url_for('static', filename='uploads/' + result['filename']) }}" alt="업로드한 이미지"><br>
+    {% if result.error %}
+        <p>오류: {{ result.error }}</p>
+    {% else %}
+        <p>파일 경로: {{ result.filename }}</p>
+        <p>분류 결과: {{ result.class }}</p>
+        <p>질환 (Stroke) 확률: {{ result.stroke_probability }}</p>
+        <p>비질환 (Non-Stroke) 확률: {{ result.non_stroke_probability }}</p>
+        <p>심각도 점수: {{ result.severity_score }}</p>
+        <img src="{{ url_for('static', filename=result.image_path) }}" alt="Uploaded Image" style="max-width: 300px;">
+    {% endif %}
+    <br>
     <a href="/">다른 이미지 예측하기</a>
 </body>
 </html>
