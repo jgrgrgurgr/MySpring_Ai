@@ -9,10 +9,8 @@
     {% if result.error %}
         <p>오류: {{ result.error }}</p>
     {% else %}
-        <p>파일 경로: {{ result.filename }}</p>
+        <p>파일명: {{ result.filename }}</p>
         <p>분류 결과: {{ result.class }}</p>
-        <p>질환 (Stroke) 확률: {{ result.stroke_probability }}</p>
-        <p>비질환 (Non-Stroke) 확률: {{ result.non_stroke_probability }}</p>
         <p>심각도 점수: {{ result.severity_score }}</p>
         <img src="{{ url_for('static', filename=result.image_path) }}" alt="Uploaded Image" style="max-width: 300px;">
     {% endif %}

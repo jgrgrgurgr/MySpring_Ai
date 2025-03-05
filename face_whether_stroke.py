@@ -2,6 +2,8 @@ import tensorflow as tf
 from PIL import Image, ImageOps
 import numpy as np
 import os
+import requests
+import json
 
 class StrokePredictor:
     def __init__(self, model_path):
@@ -66,8 +68,8 @@ class StrokePredictor:
                 if len(probabilities) < 2:
                     raise ValueError(f"모델 출력이 이진 분류 형식이 아님. 출력 형상: {output_data_float.shape}")
 
-            stroke_probability = float(probabilities[0])
-            non_stroke_probability = float(probabilities[1])
+            stroke_probability = float(probabilities[1])
+            non_stroke_probability = float(probabilities[0])
             class_name = self.class_names[0] if stroke_probability > non_stroke_probability else self.class_names[1]
             severity_score = stroke_probability
             return {
@@ -109,6 +111,18 @@ def process_folder(folder_path):
         print(f"폴더 처리 중 오류 발생: {str(e)}")
         return None
 
+def send_to_backend(results, backend_url):
+    try:
+        # 결과를 JSON 형식으로 변환
+        data = json.dumps(results)
+        response = requests.post(backend_url, json=data)
+        response.raise_for_status()
+        print(f"데이터가 백엔드에 성공적으로 전송됨. 상태 코드: {response.status_code}")
+        if response.text:
+            print(f"백엔드 응답: {response.text}")
+    except requests.exceptions.RequestException as e:
+        print(f"백엔드 전송 중 오류 발생: {e}")
+
 def main():
     folder_path = input("이미지 폴더의 경로를 입력하세요: ")
     print(f"처리할 폴더: {folder_path}")
@@ -120,6 +134,15 @@ def main():
         successful = sum(1 for r in results if "error" not in r)
         print(f"성공: {successful}개")
         print(f"실패: {len(results) - successful}개")
+
+        backend_url = ""  # 여기에 링크 삽입
+        send_prompt = input("\n예측 결과를 백엔드에 전송하시겠습니까? (yes/no): ")
+        if send_prompt.lower() == "yes":
+            send_to_backend(results, backend_url)
+        else:
+            print("백엔드에 데이터를 전송하지 않습니다.")
+    else:
+        print("처리 결과가 없거나 오류가 발생했습니다.")
 
 if __name__ == "__main__":
     main()
