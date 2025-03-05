@@ -123,6 +123,27 @@ def send_to_backend(results, backend_url):
     except requests.exceptions.RequestException as e:
         print(f"백엔드 전송 중 오류 발생: {e}")
 
+def send_to_backend(results, backend_url):
+    try:
+        data = json.dumps(results, ensure_ascii=False)  # UTF-8 인코딩 보장
+        response = requests.post(backend_url, json=data)
+        response.raise_for_status()
+        print(f"데이터가 백엔드에 성공적으로 전송됨. 상태 코드: {response.status_code}")
+        if response.text:
+            try:
+                response_data = json.loads(response.text)
+                print("백엔드에서 반환된 데이터:")
+                for item in response_data:
+                    if "severity_score" in item:
+                        percentage = item["severity_score"] * 100
+                        print(f"파일 {item['filename']}의 심각도 점수: {percentage:.1f}%")
+                    else:
+                        print(f"파일 {item['filename']}: 심각도 점수 없음")
+            except json.JSONDecodeError:
+                print("백엔드 응답을 JSON으로 파싱할 수 없습니다.")
+    except requests.exceptions.RequestException as e:
+        print(f"백엔드 전송 중 오류 발생: {e}")
+
 def main():
     folder_path = input("이미지 폴더의 경로를 입력하세요: ")
     print(f"처리할 폴더: {folder_path}")
@@ -135,7 +156,7 @@ def main():
         print(f"성공: {successful}개")
         print(f"실패: {len(results) - successful}개")
 
-        backend_url = ""  # 여기에 링크 삽입
+        backend_url = "http://localhost:8000"  # 여기에 링크 삽입
         send_prompt = input("\n예측 결과를 백엔드에 전송하시겠습니까? (yes/no): ")
         if send_prompt.lower() == "yes":
             send_to_backend(results, backend_url)
