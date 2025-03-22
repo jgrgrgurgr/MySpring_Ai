@@ -75,9 +75,9 @@ def predict():
             probabilities = tf.nn.softmax(output_data_float).numpy()[0]
             if len(probabilities) < 2:
                 raise ValueError(f"모델 출력이 이진 분류 형식이 아님. 출력 형상: {output_data_float.shape}")
-
-        stroke_probability = float(probabilities[1])
+            
         non_stroke_probability = float(probabilities[0])
+        stroke_probability = float(probabilities[1])
 
         class_name = class_names[0] if stroke_probability > non_stroke_probability else class_names[1]
         severity_score = stroke_probability

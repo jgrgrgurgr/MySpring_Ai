@@ -7,6 +7,7 @@ import json
 from flask import Flask, request, jsonify
 import base64
 from io import BytesIO
+import traceback
 
 app = Flask(__name__)
 
@@ -19,8 +20,7 @@ class StrokePredictor:
         print("Input details:", self.input_details)
         print("Output details:", self.output_details)
 
-        # 레이블 파일 로드
-        labels_path = os.path.join(os.path.dirname(__file__), "labels.txt")
+        labels_path = os.path.join(os.path.split(__file__)[0], "labels.txt")
         with open(labels_path, "r", encoding='utf-8') as f:
             self.class_names = [line.strip() for line in f.readlines()]
         print(f"Loaded labels: {self.class_names}")
@@ -118,90 +118,141 @@ class StrokePredictor:
             }
 
 def process_folder(folder_path):
+    global predictor
     valid_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.gif')
     results = []
-    predictor = StrokePredictor(os.path.join(os.path.dirname(__file__), "model.tflite"))
-
     try:
         for filename in os.listdir(folder_path):
             if filename.lower().endswith(valid_extensions):
                 image_path = os.path.join(folder_path, filename)
                 result = predictor.predict_image(image_path)
                 results.append(result)
-
                 if "error" in result:
-                    print(f"파일 {result['filename']}: 처리 중 오류 발생 - {result['error']}")
+                    print(f"File {result['filename']}: Error during processing - {result['error']}")
                 else:
-                    print(f"파일 경로: {image_path}")
-                    print(f"분류 결과: {result['class']}")
-                    print(f"질환 (Stroke) 확률: {round(result['stroke_probability'] * 100):d}%")
-                    print(f"비질환 (Non-Stroke) 확률: {round(result['non_stroke_probability'] * 100):d}%")
-                    print(f"심각도 점수: {round(result['severity_score'] * 100):d}%")
+                    print(f"File path: {image_path}")
+                    print(f"Classification result: {result['class']}")
+                    print(f"Stroke probability: {round(result['stroke_probability'] * 100)}%")
+                    print(f"Non-stroke probability: {round(result['non_stroke_probability'] * 100)}%")
+                    print(f"Severity score: {round(result['severity_score'] * 100)}%")
                     print("-" * 50)
         return results
     except Exception as e:
-        print(f"폴더 처리 중 오류 발생: {str(e)}")
+        print(f"Error processing folder: {str(e)}")
         return None
 
 def send_to_backend(results, backend_url):
     try:
         severity_scores = [round(result["severity_score"] * 100) for result in results]
-        data = json.dumps(severity_scores, ensure_ascii=False)
+        data = json.dumps({"scores": severity_scores}, ensure_ascii=False)
+        print("Sending data:", data)
         response = requests.post(backend_url, data=data, headers={"Content-Type": "application/json; charset=utf-8"})
+        print("Response status:", response.status_code)
+        print("Response text:", response.text)
         response.raise_for_status()
-        print(f"데이터가 백엔드에 성공적으로 전송됨. 상태 코드: {response.status_code}")
+        print("Data sent to backend successfully. Status code:", response.status_code)
         if response.text:
-            print(f"백엔드 응답: {response.text}")
+            print("backend response:", response.text)
         return response
     except requests.exceptions.RequestException as e:
-        print(f"백엔드 전송 중 오류 발생: {e}")
+        print("Error sending to backend:", e)
+        if isinstance(e, requests.exceptions.HTTPError):
+            print("HTTP error:", e.response.status_code, e.response.text)
         return None
 
 def main():
-    folder_path = input("이미지 폴더의 경로를 입력하세요: ")
-    print(f"처리할 폴더: {folder_path}")
+    folder_path = input("Image folder path: ")
+    print("Processing folder:", folder_path)
     print("=" * 50)
     results = process_folder(folder_path)
     if results:
-        print("\n처리 완료 통계:")
-        print(f"총 처리된 이미지: {len(results)}개")
+        print("\nProcessing complete statistics:")
+        print("Total processed images:", len(results))
         successful = sum(1 for r in results if "error" not in r)
-        print(f"성공: {successful}개")
-        print(f"실패: {len(results) - successful}개")
-
-        backend_url = ""
-        send_prompt = input("\n예측 결과를 백엔드에 전송하시겠습니까? (yes/no): ")
-        if send_prompt.lower() == "yes":
+        print("Success:", successful)
+        print("Failure:", len(results) - successful)
+        backend_url = input("Enter backend URL to send results (or leave empty to skip): ")
+        if backend_url:
             send_to_backend(results, backend_url)
         else:
-            print("백엔드에 데이터를 전송하지 않습니다.")
+            print("Not sending to backend.")
     else:
-        print("처리 결과가 없거나 오류가 발생했습니다.")
+        print("No results or error occurred.")
 
-# Flask 서버 실행
-predictor = StrokePredictor(os.path.join(os.path.dirname(__file__), "model.tflite"))
+predictor = StrokePredictor(os.path.join(os.path.split(__file__)[0], "model.tflite"))
 
-@app.route('/process_image', methods=['POST'])
-def process_image():
+# @app.route('/api/ai_send', methods=['POST'])
+# def ai_send():
+#     try:
+#         # Enhanced debugging output
+#         print("Headers:", dict(request.headers))
+#         print("Form Data:", dict(request.form))
+#         print("Files:", dict(request.files))
+#         print("Content-Type:", request.content_type)
+#         print("All request files keys:", list(request.files.keys()))
+
+#         # 파일이 있는지 확인
+#         if 'image' not in request.files:
+#             print("Error: 'image' key not found in request.files")
+#             return jsonify({"status": "error", "message": "No image file provided"}), 400
+        
+#         file = request.files['image']
+#         if file.filename == '' or not file:
+#             print("Error: Invalid or empty file received")
+#             return jsonify({"status": "error", "message": "Invalid image file"}), 400
+        
+#         # 확장자 확인
+#         filename = file.filename
+#         basename, extension = os.path.splitext(filename)
+#         if extension.lower() not in [".jpg", ".jpeg"]:
+#             print(f"Error: Invalid file extension {extension}, must be .jpg or .jpeg")
+#             return jsonify({"status": "error", "message": "File must be a JPEG image"}), 400
+        
+#         # JPEG 파일인지 확인
+#         image_data = file.read()
+#         if not image_data.startswith(b'\xFF\xD8'):
+#             print("Error: File is not a valid JPEG image")
+#             return jsonify({"status": "error", "message": "Not a valid JPEG image"}), 400
+        
+#         image = Image.open(BytesIO(image_data))
+#         result = predictor.predict_image_from_image(image)
+#         if "error" in result:
+#             print(f"Prediction error: {result['error']}")
+#             return jsonify({"status": "error", "message": result["error"]}), 500
+#         else:
+#             results_list = [result]
+#             response = send_to_backend(results_list, "http://192.168.9.29:8080/face/receive")
+#             if response:
+#                 print("Backend response successful")
+#                 return jsonify({"status": "success"}), 200
+#             else:
+#                 print("Failed to send to backend")
+#                 return jsonify({"status": "error", "message": "Failed to send to backend"}), 500
+#     except Exception as e:
+#         traceback.print_exc()
+#         print(f"Unexpected error: {str(e)}")
+#         return jsonify({"status": "error", "message": f"Invalid image file: {str(e)}"}), 500
+
+@app.route('/api/ai_send', methods=['POST'])
+def ai_send():
     try:
-        data = request.get_data()
-        base64_data = data.decode('utf-8')
-        image_data = base64.b64decode(base64_data)
+        if 'image' not in request.files:
+            return jsonify({"status": "error", "message": "No image file provided"}), 400
+        file = request.files['image']
+        if file.filename == '' or not file:
+            return jsonify({"status": "error", "message": "Invalid image file"}), 400
+        image_data = file.read()
         image = Image.open(BytesIO(image_data))
-        
         result = predictor.predict_image_from_image(image)
-        
         if "error" in result:
+            print(f"Prediction error: {result['error']}")
             return jsonify({"status": "error", "message": result["error"]}), 500
         else:
-            results_list = [result]
-            response = send_to_backend(results_list, "http://192.168.9.29:8080/face/receive")
-            if response:
-                return jsonify({"status": "success"}), 200
-            else:
-                return jsonify({"status": "error", "message": "Failed to send to backend"}), 500
+            return jsonify({"status": "success", "result": result}), 200
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        traceback.print_exc()
+        print(f"Unexpected error: {str(e)}")
+        return jsonify({"status": "error", "message": f"Invalid image file: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
