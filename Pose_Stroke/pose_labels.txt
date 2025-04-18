@@ -1,2 +1,2 @@
-Stroke(Pose)
-Nonstroke(Pose)
+질환군
+비질환군
