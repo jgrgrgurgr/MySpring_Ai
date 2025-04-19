@@ -1,5 +1,5 @@
 name: myspring-ai-server
-app: python@3.9
+app: python@3.9-slim
 options:
   env:
     - name: FLASK_ENV
