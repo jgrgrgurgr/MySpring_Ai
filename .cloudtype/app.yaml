@@ -1,4 +1,4 @@
-name: flask
+name: myspring-ai-server
 app: python@3.9
 options:
   env:
