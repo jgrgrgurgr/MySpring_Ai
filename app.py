@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 from PIL import Image
 from io import BytesIO
 import base64
@@ -10,7 +9,14 @@ from image_model import ImageStrokePredictor
 from pose_model import PoseStrokePredictor
 
 app = Flask(__name__)
-CORS(app)
+
+# CORS 헤더를 모든 응답에 추가
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET,POST,PUT,DELETE,OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+    return response
 
 image_model = ImageStrokePredictor("model.tflite", "label.txt", temperature=0.5)
 pose_model = PoseStrokePredictor("pose_model.tflite", "pose_labels.txt", temperature=0.1)
