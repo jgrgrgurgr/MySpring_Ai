@@ -18,8 +18,9 @@ def add_cors_headers(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
     return response
 
-image_model = ImageStrokePredictor("model.tflite", "label.txt", temperature=0.5)
-pose_model = PoseStrokePredictor("pose_model.tflite", "pose_labels.txt", temperature=0.1)
+# 모델 파일 경로를 디렉토리 구조에 맞게 조정
+image_model = ImageStrokePredictor("Face_Stroke/model.tflite", "Face_Stroke/label.txt", temperature=0.5)
+pose_model = PoseStrokePredictor("Pose_Stroke/pose_model.tflite", "Pose_Stroke/pose_labels.txt", temperature=0.1)
 
 def load_image_from_request(req):
     try:
