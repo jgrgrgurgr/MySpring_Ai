@@ -7,8 +7,8 @@ import os
 import logging
 
 # 수정된 임포트: 상대 경로 대신 절대 경로 사용
-from Face_Stroke.Face_Whether_Stroke import StrokePredictor as ImageStrokePredictor
-from Pose_Stroke.Arm_Whether_Stroke import PoseStrokePredictor
+from .Face_Stroke.Face_Whether_Stroke import StrokePredictor as ImageStrokePredictor
+from .Pose_Stroke.Arm_Whether_Stroke import PoseStrokePredictor
 
 # 나머지 코드는 변경 없음
 logging.basicConfig(
