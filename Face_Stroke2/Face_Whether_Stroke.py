@@ -101,7 +101,7 @@ except Exception as e:
     logger.critical("Failed to initialize predictor: %s", str(e))
     raise
 
-@app.route('/api/ai_send', methods=['POST'])
+@app.route('/face/ai_send', methods=['POST'])
 def ai_send():
     try:
         logger.info("Received request: %s", request.headers)

@@ -83,7 +83,7 @@ class StrokePredictor:
 
 predictor = StrokePredictor(os.path.join(os.path.split(__file__)[0], "pose_model.tflite"), temperature=0.1)
 
-@app.route('/api/ai_send', methods=['POST'])
+@app.route('/pose/ai_send', methods=['POST'])
 def ai_send():
     try:
         print("Request received:", request.method, request.headers)
@@ -125,4 +125,4 @@ def ai_send():
         return jsonify({"status": "error", "message": f"Unexpected error: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=6000)
