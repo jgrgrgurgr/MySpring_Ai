@@ -5,8 +5,8 @@ import base64
 import os
 import traceback
 
-from image_model import ImageStrokePredictor
-from pose_model import PoseStrokePredictor
+from .Face_Stroke.image_model import ImageStrokePredictor
+from .Pose_Stroke.pose_model import PoseStrokePredictor
 
 app = Flask(__name__)
 
