@@ -33,7 +33,7 @@ def check_file_exists(file_path):
 FACE_MODEL_PATH = os.path.join(BASE_DIR, "Face_Stroke/model.tflite")
 FACE_LABEL_PATH = os.path.join(BASE_DIR, "Face_Stroke/label.txt")
 POSE_MODEL_PATH = os.path.join(BASE_DIR, "Pose_Stroke/pose_model.tflite")
-POSE_LABEL_PATH = os.path.join(BASE_DIR, "Pose_Stroke/pose_labels.txt")
+POSE_LABEL_PATH = os.path.join(BASE_DIR, "Pose_Stroke/pose_label.txt")
 
 try:
     check_file_exists(FACE_MODEL_PATH)
