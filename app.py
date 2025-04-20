@@ -1,6 +1,4 @@
 # app.py
-from Face_Stroke.Face_Whether_Stroke import StrokePredictor as ImageStrokePredictor
-from Pose_Stroke.Arm_Whether_Stroke import PoseStrokePredictor
 from flask import Flask, request, jsonify
 import tensorflow as tf
 from PIL import Image
