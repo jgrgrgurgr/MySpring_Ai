@@ -1,1 +1,1 @@
-from Arm_Whether_Stroke import StrokePredictor
+from .Arm_Whether_Stroke import StrokePredictor

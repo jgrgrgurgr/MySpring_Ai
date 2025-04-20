@@ -1,1 +1,1 @@
-from Face_Whether_Stroke import StrokePredictor
+from .Face_Whether_Stroke import StrokePredictor
