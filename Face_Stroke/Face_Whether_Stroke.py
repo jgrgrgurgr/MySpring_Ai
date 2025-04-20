@@ -24,13 +24,17 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.config.set_visible_devices([], 'GPU') # GPU 사용 비활성화
 
 class StrokePredictor:
-    def __init__(self, model_path, temperature=1.0):
+    def __init__(self, model_path, label_path, temperature=1.0):
         try:
             self.interpreter = tf.lite.Interpreter(model_path=model_path)
             self.interpreter.allocate_tensors()
             self.input_details = self.interpreter.get_input_details()
             self.output_details = self.interpreter.get_output_details()
             self.temperature = temperature
+
+            with open(label_path, "r", encoding='utf-8') as f:
+                self.class_names = [line.strip() for line in f.readlines()]
+
             logger.info("Model loaded successfully. Input details: %s, Output details: %s", self.input_details, self.output_details)
         except Exception as e:
             logger.error("Failed to load model: %s", str(e))
@@ -103,7 +107,12 @@ class StrokePredictor:
             return {"filename": "unknown", "error": str(e)}
 
 try:
-    predictor = StrokePredictor(os.path.join(os.path.dirname(__file__), "model.tflite"), temperature=0.5)
+    predictor = StrokePredictor(
+    os.path.join(os.path.dirname(__file__), "model.tflite"),
+    os.path.join(os.path.dirname(__file__), "label.txt"),
+    temperature=0.5
+)
+
 except Exception as e:
     logger.critical("Failed to initialize predictor: %s", str(e))
     raise

@@ -20,16 +20,20 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.config.set_visible_devices([], 'GPU')  # GPU 가속 비활성화
 
 class StrokePredictor:
-    def __init__(self, model_path, temperature=1.0):
+    def __init__(self, model_path, label_path, temperature=1.0):
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
         self.temperature = temperature
+
+        with open(label_path, "r", encoding='utf-8') as f:
+            self.class_names = [line.strip() for line in f.readlines()]
+
         print("Input details:", self.input_details)
         print("Output details:", self.output_details)
         
-        labels_path = os.path.join(os.path.split(__file__)[0], "pose_labels.txt")
+        labels_path = os.path.join(os.path.split(__file__)[0], "pose_label.txt")
         with open(labels_path, "r", encoding='utf-8') as f:
             self.class_names = [line.strip() for line in f.readlines()]
         print(f"Loaded labels: {self.class_names}")
@@ -84,7 +88,12 @@ class StrokePredictor:
                 "error": str(e)
             }
 
-predictor = StrokePredictor(os.path.join(os.path.split(__file__)[0], "pose_model.tflite"), temperature=0.1)
+predictor = StrokePredictor(
+    os.path.join(os.path.dirname(__file__), "pose_model.tflite"),
+    os.path.join(os.path.dirname(__file__), "pose_label.txt"),
+    temperature=0.5
+)
+
 
 @app.route('/pose/ai_send', methods=['POST'])
 def ai_send():
