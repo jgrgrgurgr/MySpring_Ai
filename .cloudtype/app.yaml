@@ -1,0 +1,14 @@
+name: myspring-ai-server
+app: python@3.9-slim
+options:
+  env:
+    - name: FLASK_ENV
+      value: production
+  ports: 5000
+  start: gunicorn -w 2 --timeout 120 --preload app:app
+
+context:
+  git:
+    url: https://github.com/stroke-of-the-brain/ai
+    branch: juyoung
+  preset: python-flask
