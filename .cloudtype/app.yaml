@@ -1,3 +1,16 @@
+name: myspring-ai-server
+app: python@3.9
+options:
+  env:
+    - name: FLASK_ENV
+      value: production
+  ports: 5000
+  start: gunicorn -w 2 --timeout 120 --preload
+  buildenv: []
+context:
+  git:
+    url: https://github.com/stroke-of-the-brain/ai.git
+    branch: juyoung
 services:
   face-stroke:
     path: ./Face_Stroke
@@ -11,7 +24,6 @@ services:
       command: gunicorn -w 2 --timeout 120 --preload Face_Whether_Stroke:app
     routes:
       - path: /face
-
   pose-stroke:
     path: ./Pose_Stroke
     build:
@@ -24,8 +36,3 @@ services:
       command: gunicorn -w 2 --timeout 120 --preload Arm_Whether_Stroke:app
     routes:
       - path: /pose
-
-context:
-  git:
-    url: https://github.com/stroke-of-the-brain/ai
-    branch: juyoung
