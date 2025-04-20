@@ -41,10 +41,10 @@ def check_file_exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
 
 # 모델 파일 경로
-FACE_MODEL_PATH = os.path.join(BASE_DIR, "Face_Stroke/model.tflite")
-FACE_LABEL_PATH = os.path.join(BASE_DIR, "Face_Stroke/label.txt")
-POSE_MODEL_PATH = os.path.join(BASE_DIR, "Pose_Stroke/pose_model.tflite")
-POSE_LABEL_PATH = os.path.join(BASE_DIR, "Pose_Stroke/pose_label.txt")
+FACE_MODEL_PATH = os.path.join(BASE_DIR, "Model_Hub", "Face_Stroke", "model.tflite")
+FACE_LABEL_PATH = os.path.join(BASE_DIR, "Model_Hub", "Face_Stroke", "label.txt")
+POSE_MODEL_PATH = os.path.join(BASE_DIR, "Model_Hub", "Pose_Stroke", "pose_model.tflite")
+POSE_LABEL_PATH = os.path.join(BASE_DIR, "Model_Hub", "Pose_Stroke", "pose_label.txt")
 
 # 파일 존재 여부 확인
 try:
