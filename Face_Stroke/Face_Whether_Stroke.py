@@ -9,12 +9,17 @@ import traceback
 import logging
 from flask_cors import CORS
 
+tf.config.threading.set_inter_op_parallelism_threads(2)  # CPU 스레드 제한
+tf.config.threading.set_intra_op_parallelism_threads(2)
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Set max content length to 16MB
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # GPU 사용 비활성화
 
 class StrokePredictor:
     def __init__(self, model_path, temperature=1.0):

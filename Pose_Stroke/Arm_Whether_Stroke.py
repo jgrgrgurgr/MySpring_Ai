@@ -15,6 +15,7 @@ app = Flask(__name__)
 # MoveNet 모델 로드 (전역 변수로 사용)
 movenet = hub.load("https://tfhub.dev/google/movenet/singlepose/thunder/4")
 movenet = movenet.signatures['serving_default']
+tf.config.set_visible_devices([], 'GPU')  # GPU 가속 비활성화
 
 class StrokePredictor:
     def __init__(self, model_path, temperature=1.0):
