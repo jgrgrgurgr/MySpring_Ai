@@ -14,8 +14,8 @@ app = Flask(__name__)
 movenet = hub.load("https://tfhub.dev/google/movenet/singlepose/thunder/4")
 movenet = movenet.signatures['serving_default']
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = os.getenv('CUDA_VISIBLE_DEVICES', '-1')
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = os.getenv('TF_CPP_MIN_LOG_LEVEL', '3')
 tf.config.set_visible_devices([], 'GPU')
 
 class StrokePredictor:
