@@ -3,8 +3,6 @@ import tensorflow_hub as hub
 from PIL import Image, ImageOps
 import numpy as np
 import os
-import requests
-import json
 from flask import Flask, request, jsonify
 import base64
 from io import BytesIO
@@ -12,105 +10,76 @@ import traceback
 
 app = Flask(__name__)
 
-# MoveNet 모델 로드 (전역 변수로 사용)
+# MoveNet 모델 로드
 movenet = hub.load("https://tfhub.dev/google/movenet/singlepose/thunder/4")
 movenet = movenet.signatures['serving_default']
+
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-tf.config.set_visible_devices([], 'GPU')  # GPU 가속 비활성화
+tf.config.set_visible_devices([], 'GPU')
 
 class StrokePredictor:
     def __init__(self, model_path, label_path, temperature=1.0):
+        self.temperature = temperature
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
-        self.temperature = temperature
-
         with open(label_path, "r", encoding='utf-8') as f:
-            self.class_names = [line.strip() for line in f.readlines()]
+            self.labels = [line.strip() for line in f.readlines()]
 
-        print("Input details:", self.input_details)
-        print("Output details:", self.output_details)
-        
-        labels_path = os.path.join(os.path.split(__file__)[0], "pose_label.txt")
-        with open(labels_path, "r", encoding='utf-8') as f:
-            self.class_names = [line.strip() for line in f.readlines()]
-        print(f"Loaded labels: {self.class_names}")
+    def preprocess(self, image):
+        # MoveNet으로 17개 키포인트 추출 후 (x, y)만 flatten해서 모델 입력
+        image = image.convert("RGB")
+        image = ImageOps.fit(image, (256, 256), Image.LANCZOS)
+        image_array = np.asarray(image, dtype=np.uint8)
+        image_array = tf.cast(image_array, tf.int32)
+        input_data = tf.expand_dims(image_array, axis=0)
+        outputs = movenet(input_data)
+        keypoints = outputs['output_0']
+        keypoints = tf.squeeze(keypoints, axis=[0, 1])
+        keypoints_xy = keypoints[:, :2]
+        flattened = tf.reshape(keypoints_xy, [-1])
+        input_data = np.expand_dims(flattened.numpy(), axis=0).astype(np.float32)
+        return input_data
 
-    def extract_features_from_image(self, image):
-        """MoveNet을 사용해 이미지에서 키포인트 추출 후 TFLite 모델 입력 준비"""
-        try:
-            image = image.convert("RGB")
-            image = ImageOps.fit(image, (256, 256), Image.LANCZOS)
-            image_array = np.asarray(image, dtype=np.uint8)
-            image_array = tf.cast(image_array, tf.int32)
-            input_data = tf.expand_dims(image_array, axis=0)
-            
-            outputs = movenet(input_data)
-            keypoints = outputs['output_0']
-            keypoints = tf.squeeze(keypoints, axis=[0, 1])
-            keypoints_xy = keypoints[:, :2]
-            flattened = tf.reshape(keypoints_xy, [-1])
-            
-            input_data = np.expand_dims(flattened.numpy(), axis=0).astype(np.float32)
-            input_scale, input_zero_point = self.input_details[0]['quantization']
-            if input_scale > 0:
-                input_data = ((input_data / input_scale) + input_zero_point).clip(0, 255).astype(np.uint8)
-            
-            self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
-            self.interpreter.invoke()
-            output_data = self.interpreter.get_tensor(self.output_details[0]['index'])
-            return output_data
-        except Exception as e:
-            print(f"Error in extract_features_from_image: {e}")
-            raise
+    def softmax(self, x):
+        e_x = np.exp(x - np.max(x))
+        return e_x / e_x.sum()
 
-    def predict_image_from_image(self, image):
-        """PIL 이미지 객체에서 포즈 예측, severity_score만 반환"""
-        try:
-            current_features = self.extract_features_from_image(image)
-            output_scale, output_zero_point = self.output_details[0]['quantization']
-            output_data_float = (current_features.astype(np.float32) - output_zero_point) * output_scale
-            
-            probabilities = output_data_float[0]
-            predicted_class_idx = np.argmax(probabilities)
-            pose_probability = float(probabilities[predicted_class_idx])
-            
-            # severity_score만 반환하도록 수정 (두 번째 코드 방식 적용)
-            severity_score = int(round(pose_probability * 100))
-            return {
-                "severity_score": severity_score
-            }
-        except Exception as e:
-            return {
-                "filename": "unknown",
-                "error": str(e)
-            }
+    def predict(self, image):
+        input_data = self.preprocess(image)
+        # 입력 텐서 형식 검사 및 변환
+        if self.input_details[0]['dtype'] == np.uint8:
+            input_data = (input_data * 255).astype(np.uint8)
+        else:
+            input_data = input_data.astype(self.input_details[0]['dtype'])
+
+        self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
+        self.interpreter.invoke()
+        output = self.interpreter.get_tensor(self.output_details[0]['index'])[0]
+        prediction = self.softmax(output / self.temperature)
+        return {
+            "label_scores": {self.labels[i]: float(prediction[i]) for i in range(len(self.labels))},
+            "severity_score": float(prediction[1]) if len(prediction) > 1 else float(prediction[0])
+        }
 
 predictor = StrokePredictor(
     os.path.join(os.path.dirname(__file__), "pose_model.tflite"),
     os.path.join(os.path.dirname(__file__), "pose_label.txt"),
-    temperature=0.5
+    temperature=1.0 # 필요시 조정
 )
-
 
 @app.route('/pose/ai_send', methods=['POST'])
 def ai_send():
     try:
-        print("Request received:", request.method, request.headers)
-        print("Files in request:", request.files)
-        print("JSON in request:", request.is_json, request.get_json(silent=True))
-
         if 'image' in request.files:
             file = request.files['image']
-            print("File received:", file, "Filename:", file.filename)
             if file.filename == '' or not file:
                 return jsonify({"status": "error", "message": "Invalid image file"}), 400
             image_data = file.read()
         elif request.is_json:
             data = request.get_json()
-            print("JSON data:", data)
             if 'image' in data:
                 try:
                     image_data = base64.b64decode(data['image'])
@@ -126,12 +95,8 @@ def ai_send():
         except Exception as e:
             return jsonify({"status": "error", "message": "Failed to open image: " + str(e)}), 400
         
-        result = predictor.predict_image_from_image(image)
-        if "error" in result:
-            return jsonify({"status": "error", "message": result["error"]}), 500
-        else:
-            # 두 번째 코드처럼 severity_score만 반환
-            return jsonify({"status": "success", "result": result["severity_score"]}), 200
+        result = predictor.predict(image)
+        return jsonify({"status": "success", "result": result}), 200
     except Exception as e:
         traceback.print_exc()
         return jsonify({"status": "error", "message": f"Unexpected error: {str(e)}"}), 500
