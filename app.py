@@ -20,7 +20,7 @@ tf.config.set_visible_devices([], 'GPU')
 
 # 상대 경로 대신 절대 경로 사용 (기존 코드 유지)
 from Model_Hub.Face_Stroke.Face_Whether_Stroke import StrokePredictor as ImageStrokePredictor
-from Model_Hub.Pose_Stroke.Arm_Whether_Stroke import StrokePredictor as PoseStrokePredictor
+from Model_Hub.Pose_Stroke2.Arm_Whether_Stroke import StrokePredictor as PoseStrokePredictor
 
 app = Flask(__name__)
 
