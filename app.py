@@ -18,8 +18,8 @@ from Pose_Stroke.Arm_Whether_Stroke import StrokePredictor as PoseStrokePredicto
 app = Flask(__name__)
 
 # 서버 시작 시 모델 1회 로드
-image_model = ImageStrokePredictor('/Users/harold0812/Desktop/2025 2G/AI project (myspring)/Myspring_AI_Develop/Face_Stroke/model.tflite', '/Users/harold0812/Desktop/2025 2G/AI project (myspring)/Myspring_AI_Develop/Face_Stroke/label.txt', temperature=0.5)
-pose_model = PoseStrokePredictor('/Users/harold0812/Desktop/2025 2G/AI project (myspring)/Myspring_AI_Develop/Pose_Stroke/pose_model.tflite', '/Users/harold0812/Desktop/2025 2G/AI project (myspring)/Myspring_AI_Develop/Pose_Stroke/pose_labels.txt', temperature=0.1)
+image_model = ImageStrokePredictor("/Users/harold0812/Desktop/2025 2G/AI project (myspring)/Myspring_AI_Develop/Face_Stroke/model.tflite", "/Users/harold0812/Desktop/2025 2G/AI project (myspring)/Myspring_AI_Develop/Face_Stroke/label.txt", temperature=0.5)
+pose_model = PoseStrokePredictor("/Users/harold0812/Desktop/2025 2G/AI project (myspring)/Myspring_AI_Develop/Pose_Stroke/pose_model.tflite", "/Users/harold0812/Desktop/2025 2G/AI project (myspring)/Myspring_AI_Develop/Pose_Stroke/pose_labels.txt", temperature=0.1)
 
 # 나머지 코드는 변경 없음
 logging.basicConfig(
