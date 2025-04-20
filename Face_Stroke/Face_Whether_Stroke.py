@@ -19,7 +19,9 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Set max content length to 16MB
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # GPU 사용 비활성화
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+tf.config.set_visible_devices([], 'GPU') # GPU 사용 비활성화
 
 class StrokePredictor:
     def __init__(self, model_path, temperature=1.0):

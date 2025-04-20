@@ -2,11 +2,16 @@
 from Face_Stroke.Face_Whether_Stroke import StrokePredictor as ImageStrokePredictor
 from Pose_Stroke.Arm_Whether_Stroke import PoseStrokePredictor
 from flask import Flask, request, jsonify
+import tensorflow as tf
 from PIL import Image
 from io import BytesIO
 import base64
 import os
 import logging
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+tf.config.set_visible_devices([], 'GPU')
 
 # 수정된 임포트: 상대 경로 대신 절대 경로 사용
 from Face_Stroke.Face_Whether_Stroke import StrokePredictor as ImageStrokePredictor
