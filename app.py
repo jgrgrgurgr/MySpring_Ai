@@ -80,7 +80,7 @@ def load_image_from_request(req):
         if 'image' in req.files:
             req.files['image'].close()
 
-@app.route("/Face/ai_send", methods=["POST"])
+@app.route("/face/ai_send", methods=["POST"])
 def face_predict():
     global image_model
     try:
@@ -107,7 +107,7 @@ def face_predict():
             image.close()
             del image
 
-@app.route("/ai_send", methods=["POST"])
+@app.route("/pose/ai_send", methods=["POST"])
 def pose_predict():
     global pose_model
     try:
