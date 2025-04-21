@@ -30,7 +30,7 @@ google-pasta==0.2.0
 greenlet==3.1.1
 grpcio==1.70.0
 gunicorn==23.0.0
-# gym==0.23.0  # 필요 시 gym[atari]로 변경 또는 제거
+gym[atari]==0.23.0  # 필요 시 gym[atari]로 변경 또는 제거
 gym-notices==0.0.8
 h11==0.14.0
 h5py==3.13.0
@@ -66,4 +66,3 @@ requests==2.31.0
 scikit-learn==1.5.2  # 최신 버전으로 업데이트
 tensorflow-cpu==2.19.0  # tensorflow 대신 tensorflow-cpu
 tensorflow-hub==0.16.1
-gunicorn==23.0.0
