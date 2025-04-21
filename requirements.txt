@@ -65,4 +65,4 @@ Pillow==10.4.0
 requests==2.31.0
 scikit-learn==1.5.2  # 최신 버전으로 업데이트
 tensorflow-cpu==2.19.0  # tensorflow 대신 tensorflow-cpu
-tensorflow-hub==0.16.1
+#tensorflow-hub==0.16.1
