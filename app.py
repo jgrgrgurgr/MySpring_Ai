@@ -12,10 +12,6 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.config.set_visible_devices([], 'GPU')
 
-# 상대 경로 대신 절대 경로 사용
-from Model_Hub.Face_Stroke.Face_Whether_Stroke import StrokePredictor as ImageStrokePredictor
-from Model_Hub.Pose_Stroke.Arm_Whether_Stroke import StrokePredictor as PoseStrokePredictor
-
 app = Flask(__name__)
 
 @app.route('/healthz')
@@ -89,6 +85,8 @@ def face_predict():
         # 모델이 로드되지 않았다면 로드
         if image_model is None:
             try:
+                # 모델 관련 import를 함수 내부에서 처리
+                from Model_Hub.Face_Stroke.Face_Whether_Stroke import StrokePredictor as ImageStrokePredictor
                 logging.info("Loading face stroke model...")
                 image_model = ImageStrokePredictor(FACE_MODEL_PATH, FACE_LABEL_PATH, temperature=0.5)
                 logging.info("Face stroke model loaded successfully.")
@@ -114,6 +112,8 @@ def pose_predict():
         # 모델이 로드되지 않았다면 로드
         if pose_model is None:
             try:
+                # 모델 관련 import를 함수 내부에서 처리
+                from Model_Hub.Pose_Stroke.Arm_Whether_Stroke import StrokePredictor as PoseStrokePredictor
                 logging.info("Loading pose stroke model...")
                 pose_model = PoseStrokePredictor(POSE_MODEL_PATH, POSE_LABEL_PATH, temperature=0.1)
                 logging.info("Pose stroke model loaded successfully.")
@@ -131,3 +131,6 @@ def pose_predict():
         if 'image' in locals():
             image.close()
             del image
+
+if __name__ == '__main__':
+    app.run(debug=True)
