@@ -3,20 +3,34 @@ import tensorflow_hub as hub
 from PIL import Image, ImageOps
 import numpy as np
 import os
-from flask import Flask, request, jsonify
-import base64
-from io import BytesIO
-import traceback
 
-app = Flask(__name__)
+# MoveNet 모델 로컬 캐싱 설정
+MODEL_URL = "https://tfhub.dev/google/movenet/singlepose/thunder/4"
+LOCAL_MODEL_PATH = os.path.join(os.path.dirname(__file__), "movenet_thunder")
 
-# MoveNet 모델 로드
-movenet = hub.load("https://tfhub.dev/google/movenet/singlepose/thunder/4")
-movenet = movenet.signatures['serving_default']
+# MoveNet 모델을 로컬에 저장 (최초 실행 시 다운로드)
+def cache_movenet_model():
+    if not os.path.exists(LOCAL_MODEL_PATH):
+        print(f"Downloading and caching MoveNet model to {LOCAL_MODEL_PATH}...")
+        model = hub.KerasLayer(MODEL_URL)
+        tf.saved_model.save(model, LOCAL_MODEL_PATH)
+        print("MoveNet model cached successfully.")
+    else:
+        print(f"MoveNet model already cached at {LOCAL_MODEL_PATH}.")
 
+# MoveNet 모델 로드 (로컬에서)
+def load_movenet_model():
+    cache_movenet_model()
+    model = tf.saved_model.load(LOCAL_MODEL_PATH)
+    return model.signatures['serving_default']
+
+# 환경 설정
 os.environ['CUDA_VISIBLE_DEVICES'] = os.getenv('CUDA_VISIBLE_DEVICES', '-1')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = os.getenv('TF_CPP_MIN_LOG_LEVEL', '3')
 tf.config.set_visible_devices([], 'GPU')
+
+# MoveNet 모델 로드
+movenet = load_movenet_model()
 
 class StrokePredictor:
     def __init__(self, model_path, label_path, temperature=1.0):
@@ -63,43 +77,3 @@ class StrokePredictor:
             "label_scores": {self.labels[i]: float(prediction[i]) for i in range(len(self.labels))},
             "severity_score": float(prediction[1]) if len(prediction) > 1 else float(prediction[0])
         }
-
-predictor = StrokePredictor(
-    os.path.join(os.path.dirname(__file__), "pose_model.tflite"),
-    os.path.join(os.path.dirname(__file__), "pose_label.txt"),
-    temperature=1.0 # 필요시 조정
-)
-
-@app.route('/pose/ai_send', methods=['POST'])
-def ai_send():
-    try:
-        if 'image' in request.files:
-            file = request.files['image']
-            if file.filename == '' or not file:
-                return jsonify({"status": "error", "message": "Invalid image file"}), 400
-            image_data = file.read()
-        elif request.is_json:
-            data = request.get_json()
-            if 'image' in data:
-                try:
-                    image_data = base64.b64decode(data['image'])
-                except Exception as e:
-                    return jsonify({"status": "error", "message": "Invalid base64 encoding"}), 400
-            else:
-                return jsonify({"status": "error", "message": "No image data provided in JSON"}), 400
-        else:
-            return jsonify({"status": "error", "message": "Invalid request: no image file or JSON data provided"}), 400
-        
-        try:
-            image = Image.open(BytesIO(image_data))
-        except Exception as e:
-            return jsonify({"status": "error", "message": "Failed to open image: " + str(e)}), 400
-        
-        result = predictor.predict(image)
-        return jsonify({"status": "success", "result": result}), 200
-    except Exception as e:
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": f"Unexpected error: {str(e)}"}), 500
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)

@@ -1,1 +1,1 @@
-gunicorn -b 0.0.0.0:$PORT --worker-class gevent --workers 2 app:app
+gunicorn -b 0.0.0.0:$PORT app:app
