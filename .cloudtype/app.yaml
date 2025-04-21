@@ -15,7 +15,7 @@ options:
     initial_delay: 60
     interval: 10
     timeout: 5
-  run:
+run:
   command: source venv/bin/activate && gunicorn -w 2 --timeout 120 --preload app:app
 
 services:
