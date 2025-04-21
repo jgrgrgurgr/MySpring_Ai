@@ -5,12 +5,12 @@ options:
     - name: FLASK_ENV
       value: production
   ports: 5000
-  start: gunicorn -w 2 --timeout 120 --preload
-  buildenv: []
-context:
-  git:
-    url: https://github.com/stroke-of-the-brain/ai.git
-    branch: juyoung
+  start: gunicorn -w 2 --timeout 120 --preload app:app
+  health-check:
+    path: /healthz
+    interval: 10
+    timeout: 5
+
 services:
   face-stroke:
     path: ./Face_Stroke
@@ -24,6 +24,11 @@ services:
       command: gunicorn -w 2 --timeout 120 --preload Face_Whether_Stroke:app
     routes:
       - path: /face
+    health-check:
+      path: /healthz
+      interval: 10
+      timeout: 5
+
   pose-stroke:
     path: ./Pose_Stroke
     build:
@@ -36,3 +41,7 @@ services:
       command: gunicorn -w 2 --timeout 120 --preload Arm_Whether_Stroke:app
     routes:
       - path: /pose
+    health-check:
+      path: /healthz
+      interval: 10
+      timeout: 5

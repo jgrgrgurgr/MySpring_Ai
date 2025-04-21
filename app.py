@@ -24,6 +24,10 @@ from Model_Hub.Pose_Stroke.Arm_Whether_Stroke import StrokePredictor as PoseStro
 
 app = Flask(__name__)
 
+@app.route('/healthz')
+def healthz():
+    return jsonify(status="ok"), 200
+
 # CORS 설정 간소화
 CORS(app, resources={r"/*": {"origins": "*"}})
 
