@@ -80,7 +80,7 @@ def load_image_from_request(req):
         if 'image' in req.files:
             req.files['image'].close()
 
-@app.route("/Face_Stroke/ai_send", methods=["POST"])
+@app.route("/Face/ai_send", methods=["POST"])
 def face_predict():
     global image_model
     try:
@@ -107,7 +107,7 @@ def face_predict():
             image.close()
             del image
 
-@app.route("/Pose_Stroke/ai_send", methods=["POST"])
+@app.route("/ai_send", methods=["POST"])
 def pose_predict():
     global pose_model
     try:
@@ -116,7 +116,7 @@ def pose_predict():
             try:
                 # 모델 관련 import를 함수 내부에서 처리
                 from Model_Hub.Pose_Stroke.Arm_Whether_Stroke import StrokePredictor as PoseStrokePredictor
-                logging.info("Loading pose stroke model...")
+                logging.info("Loading pose stroke model…")
                 pose_model = PoseStrokePredictor(POSE_MODEL_PATH, POSE_LABEL_PATH, temperature=0.1)
                 logging.info("Pose stroke model loaded successfully.")
             except Exception as e:
