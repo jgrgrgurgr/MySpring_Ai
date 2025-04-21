@@ -16,9 +16,9 @@ tf.config.set_visible_devices([], 'GPU')
 
 app = Flask(__name__)
 
-@app.route('/healthz')
-def healthz():
-    return jsonify(status="ok"), 200
+@app.route('/')
+def index():
+    return "OK"
 
 # CORS 설정 간소화
 CORS(app, resources={r"/*": {"origins": "*"}})
