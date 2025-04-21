@@ -7,6 +7,8 @@ import os
 import logging
 from flask_cors import CORS
 
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+
 # GPU 비활성화 및 TensorFlow 로그 최소화
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'

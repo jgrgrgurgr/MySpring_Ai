@@ -8,6 +8,8 @@ options:
       value: "-1"
     - name: TF_CPP_MIN_LOG_LEVEL
       value: "3"
+    - name: TF_FORCE_GPU_ALLOW_GROWTH
+      value: "false"
   ports: 5000
   start: /app/venv/bin/gunicorn -w 2 --timeout 120 --preload app:app
   health-check:
@@ -31,6 +33,8 @@ services:
         value: "-1"
       - name: TF_CPP_MIN_LOG_LEVEL
         value: "3"
+    - name: TF_FORCE_GPU_ALLOW_GROWTH
+      value: "false"
     run:
       command: gunicorn -w 2 --timeout 120 --preload Face_Whether_Stroke:app
     routes:
@@ -52,6 +56,8 @@ services:
         value: "-1"
       - name: TF_CPP_MIN_LOG_LEVEL
         value: "3"
+    - name: TF_FORCE_GPU_ALLOW_GROWTH
+      value: "false"
     run:
       command: gunicorn -w 2 --timeout 120 --preload Arm_Whether_Stroke:app
     routes:
