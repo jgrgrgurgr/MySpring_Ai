@@ -1,1 +1,1 @@
-gunicorn --worker-class gthread --workers 2 --timeout 120 app:app
+gunicorn -b 0.0.0.0:$PORT --worker-class gevent --workers 2 app:app
