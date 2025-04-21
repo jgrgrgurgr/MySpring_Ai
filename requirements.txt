@@ -5,8 +5,6 @@ annotated-types==0.7.0
 anyio==4.9.0
 astunparse==1.6.3
 blinker==1.9.0
-CUDA==11.2
-cuDNN==8.1
 certifi==2025.1.31
 charset-normalizer==3.4.1
 click==8.1.8
@@ -66,5 +64,5 @@ python-dotenv==1.0.1
 Pillow==10.4.0
 requests==2.31.0
 scikit-learn==1.5.2  # 최신 버전으로 업데이트
-tensorflow==2.19.0  # tensorflow 대신 tensorflow-cpu
+tensorflow-cpu==2.19.0  # tensorflow 대신 tensorflow-cpu
 tensorflow-hub==0.16.1
