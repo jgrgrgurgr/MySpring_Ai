@@ -5,20 +5,14 @@ from io import BytesIO
 import base64
 import os
 import logging
-from flask_cors import CORS  # CORS 처리를 위한 라이브러리 추가
+from flask_cors import CORS
 
 # GPU 비활성화 및 TensorFlow 로그 최소화
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.config.set_visible_devices([], 'GPU')
 
-# TensorFlow 메모리 사용량 제한 (필요 시 활성화)
-# tf.config.set_logical_device_configuration(
-#     tf.config.list_physical_devices('CPU')[0],
-#     [tf.config.LogicalDeviceConfiguration(memory_limit=1024)]  # 1GB 제한
-# )
-
-# 상대 경로 대신 절대 경로 사용 (기존 코드 유지)
+# 상대 경로 대신 절대 경로 사용
 from Model_Hub.Face_Stroke.Face_Whether_Stroke import StrokePredictor as ImageStrokePredictor
 from Model_Hub.Pose_Stroke.Arm_Whether_Stroke import StrokePredictor as PoseStrokePredictor
 
@@ -33,7 +27,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 # 로깅 설정
 logging.basicConfig(
-    level=logging.INFO,  # DEBUG로 변경 가능
+    level=logging.INFO,
     filename='app.log',
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
@@ -60,9 +54,9 @@ except FileNotFoundError as e:
     logging.error(str(e))
     raise
 
-# 서버 시작 시 모델 1회 로드 (기존 코드 유지)
-image_model = ImageStrokePredictor(FACE_MODEL_PATH, FACE_LABEL_PATH, temperature=0.5)
-pose_model = PoseStrokePredictor(POSE_MODEL_PATH, POSE_LABEL_PATH, temperature=0.1)
+# 모델 초기화 (지연 로딩을 위해 None으로 설정)
+image_model = None
+pose_model = None
 
 def load_image_from_request(req):
     try:
@@ -78,21 +72,30 @@ def load_image_from_request(req):
         if img.format not in ['JPEG', 'PNG']:
             raise ValueError(f"Unsupported image format: {img.format}. Only JPEG and PNG are supported.")
         
-        # 메모리 절약을 위해 이미지 리사이징 (필요 시)
-        # 모델 입력 크기가 224x224이므로 불필요한 경우 생략 가능
+        # 이미지 리사이징
         img = img.resize((224, 224), Image.Resampling.LANCZOS)
         
         return img
     except Exception as e:
         raise ValueError(f"Invalid image input: {str(e)}")
     finally:
-        # 요청 데이터 정리
         if 'image' in req.files:
             req.files['image'].close()
 
 @app.route("/Face_Stroke/ai_send", methods=["POST"])
 def face_predict():
+    global image_model
     try:
+        # 모델이 로드되지 않았다면 로드
+        if image_model is None:
+            try:
+                logging.info("Loading face stroke model...")
+                image_model = ImageStrokePredictor(FACE_MODEL_PATH, FACE_LABEL_PATH, temperature=0.5)
+                logging.info("Face stroke model loaded successfully.")
+            except Exception as e:
+                logging.error(f"Failed to load face model: {str(e)}")
+                return jsonify({"status": "error", "message": "Failed to load face model."}), 500
+
         image = load_image_from_request(request)
         result = image_model.predict(image)
         return jsonify({"status": "success", "result": result})
@@ -100,14 +103,24 @@ def face_predict():
         logging.error(f"Error in face_predict: {str(e)}")
         return jsonify({"status": "error", "message": "내부 서버 오류가 발생했습니다."}), 500
     finally:
-        # 이미지 객체 명시적 제거
         if 'image' in locals():
             image.close()
             del image
 
 @app.route("/Pose_Stroke/ai_send", methods=["POST"])
 def pose_predict():
+    global pose_model
     try:
+        # 모델이 로드되지 않았다면 로드
+        if pose_model is None:
+            try:
+                logging.info("Loading pose stroke model...")
+                pose_model = PoseStrokePredictor(POSE_MODEL_PATH, POSE_LABEL_PATH, temperature=0.1)
+                logging.info("Pose stroke model loaded successfully.")
+            except Exception as e:
+                logging.error(f"Failed to load pose model: {str(e)}")
+                return jsonify({"status": "error", "message": "Failed to load pose model."}), 500
+
         image = load_image_from_request(request)
         result = pose_model.predict(image)
         return jsonify({"status": "success", "result": result["severity_score"]})
@@ -115,7 +128,6 @@ def pose_predict():
         logging.error(f"Error in pose_predict: {str(e)}")
         return jsonify({"status": "error", "message": "내부 서버 오류가 발생했습니다."}), 500
     finally:
-        # 이미지 객체 명시적 제거
         if 'image' in locals():
             image.close()
             del image
