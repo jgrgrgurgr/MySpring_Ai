@@ -1,1 +1,4 @@
-gunicorn -b 0.0.0.0:$PORT app:app
+build:
+  context: myspring-ai-server
+run:
+  command: gunicorn app:app
